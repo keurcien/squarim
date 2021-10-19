@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>squarim</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+
+<body>
+    <div class="header">
+        <h1>squarim</h1>
+    </div>
+
+    <div class="content">
+        <p>Sélectionnez une image que vous souhaitez traiter</p>
+        <form method="POST" action="" enctype="multipart/form-data">
+            <!-- <p><input type="file" name="file" multiple accept="image/*"></p> -->
+            <p><input type="file" name="file" accept="image/*"></p>
+            <p><input id="submit-btn" type="submit" value="Lancer le traitement"></p>
+        </form>
+    </div>
+</body>
+
+</html>
