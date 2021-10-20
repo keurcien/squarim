@@ -1,9 +1,10 @@
-from flask import Flask, render_template, send_file, request, redirect, url_for
-from PIL import Image
-from flask.helpers import send_file
-import numpy as np
-import cv2 as cv
 import io
+
+import cv2 as cv
+import numpy as np
+from flask import Flask, redirect, render_template, request, send_file, url_for
+from flask.helpers import send_file
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -12,7 +13,8 @@ def expand_horizontally(img):
     height, width, _ = img.shape
     padding = (height - width) // 2
     img_ = cv.copyMakeBorder(
-        img, 0, 0, padding, height - width - padding, cv.BORDER_REPLICATE)
+        img, 0, 0, padding, height - width - padding, cv.BORDER_REPLICATE
+    )
     return Image.fromarray(img_)
 
 
@@ -37,5 +39,9 @@ def upload_images():
         img_,
         mimetype="image/png",
         attachment_filename=f"{uploaded_image.filename}_squarim.jpg",
-        as_attachment=True
+        as_attachment=True,
     )
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
