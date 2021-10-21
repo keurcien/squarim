@@ -34,6 +34,7 @@ body {
     color: white;
     font-weight: 600;
     font-family: Roboto;
+    margin: 10px;
 }
 
 #submit-btn:hover {
@@ -42,4 +43,36 @@ body {
     color: #1005a0;
     font-weight: 600;
     cursor: pointer;
+}
+
+#download-btn {
+    border-radius: 25px;
+    border: transparent;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    background: #ff6c62;
+    color: white;
+    font-weight: 600;
+    font-family: Roboto;
+    margin: 10px;
+}
+
+#download-btn:hover {
+    background: white;
+    border: 1px solid #ff6c62;
+    color: #ff6c62;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+
+.img-container {
+    display: inline;
+}
+
+.img-preview {
+    width: 200px;
+    margin: 5px;
 }
