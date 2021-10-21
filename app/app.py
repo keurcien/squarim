@@ -1,12 +1,14 @@
 import io
 import os
+import random
 import zipfile
 
 import cv2 as cv
 import numpy as np
-from flask import Flask, render_template, request, send_file, redirect, url_for
+from flask import Flask, redirect, render_template, request, send_file, url_for
 from flask.helpers import send_file
 from PIL import Image
+
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "static/temp"
 
@@ -20,9 +22,13 @@ def expand_horizontally(img):
     return Image.fromarray(img_)
 
 
-def stretch_horizontally(img, left=50, right=50):
+def stretch_horizontally(img):
+
     height, width, _ = img.shape
     padding = (height - width) // 2
+
+    right = int(0.01 * width)
+    left = int(0.01 * width)
 
     left_part = img[:, 0:left, :]
     left_width = padding + left
@@ -32,16 +38,18 @@ def stretch_horizontally(img, left=50, right=50):
 
     center_part = img[:, left:-right:, :]
 
-    left_img = cv.resize(left_part, (left_width, height),
-                         interpolation=cv.INTER_AREA)
-    right_img = cv.resize(right_part, (right_width, height),
-                          interpolation=cv.INTER_AREA)
+    left_img = cv.resize(left_part, (left_width, height), interpolation=cv.INTER_AREA)
+    right_img = cv.resize(
+        right_part, (right_width, height), interpolation=cv.INTER_AREA
+    )
 
     res = np.concatenate((left_img, center_part, right_img), axis=1)
-    res[:, padding:(padding+2 * left), :] = cv.blur(res[:,
-                                                        padding:(padding+2 * left), :], (30, 30))
-    res[:, -(right_width+right):-(right_width-right), :] = cv.blur(res[:,  -
-                                                                       (right_width+right):-(right_width-right), :], (30, 30))
+    res[:, padding : (padding + 2 * left), :] = cv.blur(
+        res[:, padding : (padding + 2 * left), :], (30, 30)
+    )
+    res[:, -(right_width + right) : -(right_width - right), :] = cv.blur(
+        res[:, -(right_width + right) : -(right_width - right), :], (30, 30)
+    )
     return Image.fromarray(res)
 
 
@@ -52,15 +60,13 @@ def index():
 
 @app.route("/<filename>")
 def display_image(filename):
-    print('display_image filename: ' + filename)
-    return redirect(url_for('static', filename=filename), code=301)
+    print("display_image filename: " + filename)
+    return redirect(url_for("static", filename=filename), code=301)
 
 
 @app.route("/", methods=["POST"])
 def upload_images():
     # if len(files) == 1 do not zip
-
-    print(request.form)
     if request.form["action"] == "Lancer le traitement":
         processed_images = []
         if request.files.getlist("file"):
@@ -71,17 +77,21 @@ def upload_images():
                     # replicate = expand_horizontally(img)
                     replicate = stretch_horizontally(img)
                     replicate.save(
-                        f"app/{app.config['UPLOAD_FOLDER']}/{uploaded_image.filename}")
+                        f"app/{app.config['UPLOAD_FOLDER']}/{uploaded_image.filename}"
+                    )
                     processed_images.append(
-                        f"{app.config['UPLOAD_FOLDER']}/{uploaded_image.filename}")
-                except:
+                        f"{app.config['UPLOAD_FOLDER']}/{uploaded_image.filename}"
+                    )
+                except Exception as e:
                     print(f"Could not process {uploaded_image.filename}")
-
+                    raise e
             return render_template("index.html", images=processed_images)
 
     if request.form["action"] == "Download":
-        with zipfile.ZipFile("app/static/squarim.zip", "w", zipfile.ZIP_DEFLATED) as zipf:
-            for file in os.listdir('app/static/temp'):
+        with zipfile.ZipFile(
+            f"app/static/squarim.zip", "w", zipfile.ZIP_DEFLATED
+        ) as zipf:
+            for file in os.listdir(f"app/static/temp"):
                 zipf.write(f"app/{app.config['UPLOAD_FOLDER']}/{file}", file)
                 os.remove(f"app/{app.config['UPLOAD_FOLDER']}/{file}")
 
@@ -95,8 +105,9 @@ def upload_images():
             return_data,
             mimetype="zip",
             attachment_filename="squarim.zip",
-            as_attachment=True)
+            as_attachment=True,
+        )
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)
