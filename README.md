@@ -2,7 +2,7 @@
 
 ## 1. Stretch
 
-À utiliser uniquement pour des images à fond uni dont la largeur inférieure à la hauteur.
+À utiliser uniquement pour des images à fond uni dont la largeur est inférieure à la hauteur.
 
 ```javascript
 let data = new FormData();
