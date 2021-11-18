@@ -1,8 +1,9 @@
 import base64
 import io
-import requests
+
 import cv2 as cv
 import numpy as np
+import requests
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
@@ -17,10 +18,18 @@ app.add_middleware(
 
 
 class Squarimage:
-
     def __init__(self, img):
-        self.img = img
-        self.height, self.width, _ = img.shape
+        self.img = self.rotate(img)
+        self.height, self.width, _ = self.img.shape
+
+    def rotate(self, img):
+        height, width = img.shape
+        if height >= width:
+            self.rotated = False
+            return img
+        else:
+            self.rotated = True
+            return img.rotate(270)
 
     def stretch(self, left=0, right=0, mirror=False):
         if self.height > self.width:
@@ -35,8 +44,7 @@ class Squarimage:
                 return Image.fromarray(self._stretch_right(right))
 
             if left > 0 and right > 0:
-                return Image.fromarray(self._stretch_both_sides(
-                    left=left, right=right))
+                return Image.fromarray(self._stretch_both_sides(left=left, right=right))
         else:
             return Image.fromarray(self.img)
 
@@ -49,7 +57,8 @@ class Squarimage:
         right_side = self.img[:, left:, :]
 
         left_side_resized = cv.resize(
-            left_side, (left_side_width, self.height), interpolation=cv.INTER_AREA)
+            left_side, (left_side_width, self.height), interpolation=cv.INTER_AREA
+        )
         resized_img = np.concatenate((left_side_resized, right_side), axis=1)
         return resized_img
 
@@ -62,7 +71,8 @@ class Squarimage:
         left_side = self.img[:, 0:-right, :]
 
         right_side_resized = cv.resize(
-            right_side, (right_side_width, self.height), interpolation=cv.INTER_AREA)
+            right_side, (right_side_width, self.height), interpolation=cv.INTER_AREA
+        )
         resized_img = np.concatenate((left_side, right_side_resized), axis=1)
 
         return resized_img
@@ -80,22 +90,36 @@ class Squarimage:
         center = self.img[:, left:-right:, :]
 
         left_side_resized = cv.resize(
-            left_side, (left_side_width, self.height), interpolation=cv.INTER_AREA)
+            left_side, (left_side_width, self.height), interpolation=cv.INTER_AREA
+        )
         right_side_resized = cv.resize(
-            right_side, (right_side_width, self.height), interpolation=cv.INTER_AREA)
+            right_side, (right_side_width, self.height), interpolation=cv.INTER_AREA
+        )
 
         resized_img = np.concatenate(
-            (left_side_resized, center, right_side_resized), axis=1)
+            (left_side_resized, center, right_side_resized), axis=1
+        )
         return resized_img
 
     def _reflect(self, left, right):
         if left > 0 and right > 0:
             padding = (self.height - self.width) // 2
-            return cv.copyMakeBorder(self.img, 0, 0, padding, self.height - self.width - padding, cv.BORDER_REFLECT)
+            return cv.copyMakeBorder(
+                self.img,
+                0,
+                0,
+                padding,
+                self.height - self.width - padding,
+                cv.BORDER_REFLECT,
+            )
         elif left > 0 and right == 0:
-            return cv.copyMakeBorder(self.img, 0, 0, self.height - self.width, 0, cv.BORDER_REFLECT)
+            return cv.copyMakeBorder(
+                self.img, 0, 0, self.height - self.width, 0, cv.BORDER_REFLECT
+            )
         elif left == 0 and right > 0:
-            return cv.copyMakeBorder(self.img, 0, 0, self.height - self.width, 0, cv.BORDER_REFLECT)
+            return cv.copyMakeBorder(
+                self.img, 0, 0, self.height - self.width, 0, cv.BORDER_REFLECT
+            )
 
 
 @app.get("/")
@@ -104,7 +128,13 @@ def index():
 
 
 @app.post("/")
-def stretch(file: str = Form(...), name: str = Form(...), left: int = Form(...), right: int = Form(...), mirror: bool = Form(...)):
+def stretch(
+    file: str = Form(...),
+    name: str = Form(...),
+    left: int = Form(...),
+    right: int = Form(...),
+    mirror: bool = Form(...),
+):
     try:
 
         if not file.startswith("http"):
@@ -121,16 +151,13 @@ def stretch(file: str = Form(...), name: str = Form(...), left: int = Form(...),
         squarimg = Squarimage(img)
         img_ = squarimg.stretch(left=left, right=right, mirror=mirror)
 
+        if squarimg.rotated:
+            img_ = img_.rotate(90)
+
         buff = io.BytesIO()
         img_.save(buff, format="JPEG")
         imgstr_ = base64.b64encode(buff.getvalue()).decode("utf-8")
-        return {
-            "name": name,
-            "dataURL": f"data:image/jpeg;base64,{imgstr_}"
-        }
+        return {"name": name, "dataURL": f"data:image/jpeg;base64,{imgstr_}"}
 
     except:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Could not process {name}."
-        )
+        raise HTTPException(status_code=500, detail=f"Could not process {name}.")
