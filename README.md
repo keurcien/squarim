@@ -2,8 +2,6 @@
 
 ## 1. Stretch
 
-À utiliser uniquement pour des images à fond uni dont la largeur est inférieure à la hauteur.
-
 ### Avec une l'URL d'une image
 
 ```javascript
