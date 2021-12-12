@@ -4,3 +4,4 @@ python-multipart==0.0.5
 fastapi==0.66.0
 uvicorn==0.14.0
 requests==2.23.0
+# seam-carving==1.0.0
